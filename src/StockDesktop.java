@@ -17,10 +17,13 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+//20160311
+//SH:600000-603999:4000
+//SZ:000001-002792,300001-300489:2792+488=3280
+//0311 TODO:先获得数据，检查一遍，把活动的ID保存到数组，再用这数据拼接成URL，这样就只要2600+数据，节省时间。
+//打印出消耗时间；
 public class StockDesktop {
-	class dataStruct{
-		
-	}
+
 	
     JFrame jf;  
     JPanel jp;  
@@ -63,7 +66,8 @@ public class StockDesktop {
 		
         TimerTask task = new TimerTask() {  
             public void run() {  
-        		String stocks[]=getUrlData("http://hq.sinajs.cn/list=s_sh000001,s_sz002230,s_sz002736");
+        		ArrayList list=getUrlData("http://hq.sinajs.cn/list=s_sh000001,s_sz002230,s_sz002736");
+        		String[] stocks = (String[])list.toArray(new String[list.size()]);
         		for(int i=0;i<stocks.length;i++){
         			//System.out.println(stocks[i]);
         			String[] tmp = stocks[i].split(",");
@@ -80,11 +84,41 @@ public class StockDesktop {
         long intevalPeriod = 1 * 1000;  
         timer.scheduleAtFixedRate(task, delay, intevalPeriod);
         
+        //20160311
+		//SZ:000001-002792,300001-300489:2792+488=3280
+        //SH:600000-603999:4000
+        
         ///////////debug////////////
-        urlProcess(false, 2000, 500);
+		//SZ
+//        String urlSZ = urlProcess(false, 0, 700);//sz
+//        ArrayList listSZ=getUrlData(urlSZ);
+//        urlSZ = urlProcess(false, 700, 700);//sz
+//        listSZ.addAll(getUrlData(urlSZ));
+//        urlSZ = urlProcess(false, 1400, 700);//sz
+//        listSZ.addAll(getUrlData(urlSZ));
+//        urlSZ = urlProcess(false, 2100, 700);//sz
+//        listSZ.addAll(getUrlData(urlSZ));
+//        urlSZ = urlProcess(false, 300000, 700);//sz
+//        listSZ.addAll(getUrlData(urlSZ));
+//        System.out.println(listSZ.size());
+//
+//        //SH
+//        String urlSH = urlProcess(true, 600000, 700);//sh
+//        ArrayList listSH=getUrlData(urlSH);
+//        urlSH = urlProcess(true, 600700, 700);//sh
+//        listSH.addAll(getUrlData(urlSH));
+//        urlSH = urlProcess(true, 601400, 700);//sh
+//        listSH.addAll(getUrlData(urlSH));
+//        urlSH = urlProcess(true, 602100, 700);//sh
+//        listSH.addAll(getUrlData(urlSH));
+//        urlSH = urlProcess(true, 602800, 700);//sh
+//        listSH.addAll(getUrlData(urlSH));
+//        urlSH = urlProcess(true, 603500, 700);//sh
+//        listSH.addAll(getUrlData(urlSH));
+//        System.out.println(listSH.size());
 	}
 	
-	public static String[] getUrlData(String url){
+	public static ArrayList getUrlData(String url){
 		BufferedReader reader = null;
 		ArrayList list = new ArrayList(); 
 		try {
@@ -99,7 +133,12 @@ public class StockDesktop {
 			while ((line = reader.readLine()) != null)
 			{
 				String[] tmp = line.split("\"");
-				list.add(tmp[1]);
+	        	if(!tmp[1].equals("")){//空行（退市？）
+		        	String[] tmpb=tmp[1].split(",");
+		        	if(Float.parseFloat(tmpb[1])!=0){//过滤掉停牌的（股价=0）
+		        		list.add(tmp[1]);
+		        	}
+	        	}
 			}
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
@@ -107,9 +146,9 @@ public class StockDesktop {
 			e.printStackTrace();
 		}
 		
-		String[] stocks = (String[])list.toArray(new String[list.size()]);
+		//String[] stocks = (String[])list.toArray(new String[list.size()]);
 		
-		return stocks;
+		return list;
 	}
 	
 	public static String urlProcess(Boolean shanghai, int start, int length) {
@@ -128,7 +167,6 @@ public class StockDesktop {
 				sb.append(headsz);
         	sb.append(String.valueOf(df.format(i)));
         }
-        System.out.println(sb);
         
 		return sb.toString();
 	}
