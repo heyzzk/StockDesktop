@@ -1,5 +1,7 @@
 import java.awt.BorderLayout;
 import java.awt.Container;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -13,9 +15,12 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+
+import FileOperate.FileOperate;
 
 //20160311
 //SH:600000-603999:4000
@@ -23,62 +28,86 @@ import javax.swing.JTextField;
 //0311 TODO:先获得数据，检查一遍，把活动的ID保存到数组，再用这数据拼接成URL，这样就只要2600+数据，节省时间。
 //打印出消耗时间；
 public class StockDesktop {
-
 	
     JFrame jf;  
     JPanel jp;  
-    static JTextField jtf1,jtf2,jtf3;
+    static JTextField jtf[] = new JTextField[10];//支持10组数据
+    static JButton jbt[] = new JButton[10];
+    
+    static ArrayList globallist;
 
     public StockDesktop() {  
         jf = new JFrame("Desktop");  
         Container contentPane = jf.getContentPane();  
         contentPane.setLayout(null); 
         jp = new JPanel();  
-        jtf1 = new JTextField();  
-        jtf2 = new JTextField();  
-        jtf3 = new JTextField();  
-        jp.add(jtf1);
-        jp.add(jtf2);
-        jp.add(jtf3);
-        contentPane.add(jtf1);
-        contentPane.add(jtf2);
-        contentPane.add(jtf3);
-        jtf1.setBounds(10,20,180,25);
-        jtf2.setBounds(10,50,180,25);
-        jtf3.setBounds(10,80,180,25);
+        
+        for(int i=0;i<10;i++){
+            jtf[i] = new JTextField();  
+            jp.add(jtf[i]);
+            contentPane.add(jtf[i]);
+            jtf[i].setBounds(10,20+30*i,180,25);
+            jtf[i].setText("null");
+            
+            jbt[i] = new JButton();  
+            jp.add(jbt[i]);
+            contentPane.add(jbt[i]);
+            jbt[i].setBounds(200,20+30*i,25,25);
+            jbt[i].addActionListener(new ButtonListen());
+        }
 
+        //主窗口设置
         jf.pack();
         jf.setLocation(20, 860);  
-        jf.setSize(200, 160);
+        jf.setSize(260, 300);
         jf.setVisible(true);
         jf.addWindowListener(new WindowAdapter() {  
             public void windowClosing(WindowEvent e) {  
                 System.exit(0);  
             }  
-        });  
+        });
+    }
+    
+    class ButtonListen implements ActionListener {
+	    public void actionPerformed(ActionEvent e) {
+	    	String[] tmp = e.toString().split(",");
+	    	int btid=(Integer.parseInt(tmp[5])-20)/30;
+	    	//System.out.println("你单击了按钮:"+btid);
+	    	//jtf[btid].setText("null");
+	    	String getDate = jtf[btid].getText();
+	    	if(!getDate.equals("null")){
+	    		//删除掉这个stock
+	    		System.out.println("ID="+btid+",删除掉这个stock");
+	    	}else{
+	    		//为空，增加这个stock
+	    		System.out.println("ID="+btid+",增加这个stock");
+	    	}
+	    	
+	    	//重新拼凑URL并写入文件
+	    }
     }
 	
 	public static void main(String[] args) {
 		
 		new StockDesktop();//for content view
+		
+		final FileOperate fop = new FileOperate("file");
         
 		final DecimalFormat df = new DecimalFormat("0.00");
 		
-        TimerTask task = new TimerTask() {  
+        TimerTask task = new TimerTask() {
             public void run() {  
-        		ArrayList list=getUrlData("http://hq.sinajs.cn/list=s_sh000001,s_sz002230,s_sz002736");
-        		String[] stocks = (String[])list.toArray(new String[list.size()]);
+        		globallist=getUrlData(fop.fileRead());
+        		//System.out.println("长度"+list.size());
+        		String[] stocks = (String[])globallist.toArray(new String[globallist.size()]);
         		for(int i=0;i<stocks.length;i++){
-        			//System.out.println(stocks[i]);
         			String[] tmp = stocks[i].split(",");
-
-        			//System.out.println(tmp[0]+","+tmp[3]+","+df.format(ratio));
-        			if(i==0)jtf1.setText(tmp[0]+"    "+tmp[1]+"    "+tmp[3]+"%");
-        			if(i==1)jtf2.setText(tmp[0]+"    "+tmp[1]+"    "+tmp[3]+"%");
-        			if(i==2)jtf3.setText(tmp[0]+"    "+tmp[1]+"    "+tmp[3]+"%");
+        			
+        			if(!tmp[0].equals("null"))
+        				jtf[i].setText(tmp[0]+"    "+tmp[1]+"    "+tmp[3]+"%");
         		}
-            }  
-        };  
+            }
+        };
         Timer timer = new Timer();  
         long delay = 0;  
         long intevalPeriod = 1 * 1000;  
@@ -133,11 +162,15 @@ public class StockDesktop {
 			while ((line = reader.readLine()) != null)
 			{
 				String[] tmp = line.split("\"");
-	        	if(!tmp[1].equals("")){//空行（退市？）
+	        	if(!tmp[1].equals("")){//非空行
 		        	String[] tmpb=tmp[1].split(",");
-		        	if(Float.parseFloat(tmpb[1])!=0){//过滤掉停牌的（股价=0）
+		        	if(Float.parseFloat(tmpb[1])!=0){//股价不为0
+		        		list.add(tmp[1]);
+		        	}else{//股价=0
 		        		list.add(tmp[1]);
 		        	}
+	        	}else{//空行（退市？）
+	        		list.add("null,0,0,0,0,0,0");
 	        	}
 			}
 		} catch (MalformedURLException e) {
