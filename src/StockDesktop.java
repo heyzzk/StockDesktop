@@ -22,11 +22,6 @@ import javax.swing.JTextField;
 
 import FileOperate.FileOperate;
 
-//20160311
-//SH:600000-603999:4000
-//SZ:000001-002792,300001-300489:2792+488=3280
-//0311 TODO:先获得数据，检查一遍，把活动的ID保存到数组，再用这数据拼接成URL，这样就只要2600+数据，节省时间。
-//打印出消耗时间；
 public class StockDesktop {
 	
     JFrame jf;  
@@ -35,6 +30,10 @@ public class StockDesktop {
     static JButton jbt[] = new JButton[10];
     
     static ArrayList globallist;
+
+	static String filecode[] = new String[10];//code string read from file
+	static int codeactive[] = {0};
+	static String urlfinal = "";
 
     public StockDesktop() {  
         jf = new JFrame("Desktop");  
@@ -75,15 +74,31 @@ public class StockDesktop {
 	    	//System.out.println("你单击了按钮:"+btid);
 	    	//jtf[btid].setText("null");
 	    	String getDate = jtf[btid].getText();
+			/*
 	    	if(!getDate.equals("null")){
-	    		//删除掉这个stock
-	    		System.out.println("ID="+btid+",删除掉这个stock");
+	    		System.out.println("ID="+btid+",delete stock");
 	    	}else{
-	    		//为空，增加这个stock
-	    		System.out.println("ID="+btid+",增加这个stock");
+	    		System.out.println("ID="+btid+",add stock");
 	    	}
-	    	
-	    	//重新拼凑URL并写入文件
+	    	*/
+
+			if(codeactive[btid]==1){//active->null
+				filecode[btid] = "null";
+				codeactive[btid] = 0;
+				System.out.println("ID="+btid+",delete stock");
+			}else{//null->active
+				filecode[btid] = jtf[btid].getText();
+				codeactive[btid] = 1;
+				System.out.println("ID="+btid+",add stock");
+			}
+			
+			//filecode write to file
+			final FileOperate fop = new FileOperate("file");
+			urlfinal = urlProcess(filecode);
+			StringBuilder sb = new StringBuilder();
+			for(int i=0;i<filecode.length;i++)
+				sb.append(filecode[i]+";");
+			fop.fileWrite(sb.toString());
 	    }
     }
 	
@@ -93,18 +108,35 @@ public class StockDesktop {
 		
 		final FileOperate fop = new FileOperate("file");
         
-		final DecimalFormat df = new DecimalFormat("0.00");
+		//final DecimalFormat df = new DecimalFormat("0.00");
 		
         TimerTask task = new TimerTask() {
             public void run() {  
-        		globallist=getUrlData(fop.fileRead());
-        		//System.out.println("长度"+list.size());
+				System.out.println("timer");
+        		String readfile = fop.fileRead();
+				filecode = readfile.split(";");
+				System.out.println("filecode length="+filecode.length);
+				for(int i=0;i<filecode.length;i++) {
+					if(!filecode[i].equals("null")){
+						System.out.println("filecode["+i+"]="+filecode[i]);
+						codeactive[i] = 1;
+					}
+				}
+
+				//combine the code to url
+				urlfinal = urlProcess(filecode);
+        		System.out.println("urlfinal="+urlfinal);
+				
+				//get data from url
+				globallist=getUrlData(urlfinal);
+
+				//display
         		String[] stocks = (String[])globallist.toArray(new String[globallist.size()]);
         		for(int i=0;i<stocks.length;i++){
         			String[] tmp = stocks[i].split(",");
         			
         			if(!tmp[0].equals("null"))
-        				jtf[i].setText(tmp[0]+"    "+tmp[1]+"    "+tmp[3]+"%");
+        				jtf[i].setText(tmp[0]+"    "+tmp[1]+"    "+tmp[3]+" ");
         		}
             }
         };
@@ -112,39 +144,6 @@ public class StockDesktop {
         long delay = 0;  
         long intevalPeriod = 1 * 1000;  
         timer.scheduleAtFixedRate(task, delay, intevalPeriod);
-        
-        //20160311
-		//SZ:000001-002792,300001-300489:2792+488=3280
-        //SH:600000-603999:4000
-        
-        ///////////debug////////////
-		//SZ
-//        String urlSZ = urlProcess(false, 0, 700);//sz
-//        ArrayList listSZ=getUrlData(urlSZ);
-//        urlSZ = urlProcess(false, 700, 700);//sz
-//        listSZ.addAll(getUrlData(urlSZ));
-//        urlSZ = urlProcess(false, 1400, 700);//sz
-//        listSZ.addAll(getUrlData(urlSZ));
-//        urlSZ = urlProcess(false, 2100, 700);//sz
-//        listSZ.addAll(getUrlData(urlSZ));
-//        urlSZ = urlProcess(false, 300000, 700);//sz
-//        listSZ.addAll(getUrlData(urlSZ));
-//        System.out.println(listSZ.size());
-//
-//        //SH
-//        String urlSH = urlProcess(true, 600000, 700);//sh
-//        ArrayList listSH=getUrlData(urlSH);
-//        urlSH = urlProcess(true, 600700, 700);//sh
-//        listSH.addAll(getUrlData(urlSH));
-//        urlSH = urlProcess(true, 601400, 700);//sh
-//        listSH.addAll(getUrlData(urlSH));
-//        urlSH = urlProcess(true, 602100, 700);//sh
-//        listSH.addAll(getUrlData(urlSH));
-//        urlSH = urlProcess(true, 602800, 700);//sh
-//        listSH.addAll(getUrlData(urlSH));
-//        urlSH = urlProcess(true, 603500, 700);//sh
-//        listSH.addAll(getUrlData(urlSH));
-//        System.out.println(listSH.size());
 	}
 	
 	public static ArrayList getUrlData(String url){
@@ -184,7 +183,8 @@ public class StockDesktop {
 		return list;
 	}
 	
-	public static String urlProcess(Boolean shanghai, int start, int length) {
+	public static String urlProcess(String input[]) {
+	/*
 		DecimalFormat df = new DecimalFormat("000000");
 		StringBuilder sb = new StringBuilder();
 		String url="http://hq.sinajs.cn/list=";
@@ -202,5 +202,20 @@ public class StockDesktop {
         }
         
 		return sb.toString();
+	*/
+
+	String url="http://hq.sinajs.cn/list=";
+	StringBuilder sb = new StringBuilder();
+	sb.append(url);
+
+	for(int i=0;i<input.length;i++){
+		if(input[i] == null){
+			sb.append("null,");
+		}else{
+			sb.append(input[i]+",");
+		}
+	}
+	
+	return sb.toString();
 	}
 }

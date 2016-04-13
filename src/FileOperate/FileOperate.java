@@ -40,14 +40,16 @@ public class FileOperate {
 	}
 	
 	public String fileRead(){
+		String a = "";
 		String b = null;
 		try{
 	        FileReader fr = new FileReader(filename);  
 	        br = new BufferedReader(fr);  
-	        //while ((b = br.readLine()) != null) {
-	        //    System.out.println("filetest="+b);
-	        //}  
-	        b = br.readLine();
+	        while ((b = br.readLine()) != null) {
+	            //System.out.println("filetest="+b);
+				a += b;
+	        }  
+	        //b = br.readLine();
 		}catch(Exception e){
 			
 		}finally {  
@@ -57,6 +59,6 @@ public class FileOperate {
                 e.printStackTrace();  
             }  
         } 
-		return b;
+		return a;
 	}
 }
