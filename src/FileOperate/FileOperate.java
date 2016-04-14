@@ -1,3 +1,17 @@
+/******************************************************************************
+*
+* Authors            : JackZheng (heyzzk@126.com)
+*
+********************************************************************************
+* Copyright (c) 2016, JackZheng.
+* All rights reserved.
+*******************************************************************************
+* REVISON HISTORY
+*
+* VERSION | DATE          | DESCRIPTION
+* 1.0.0   | 2016/04/14    | First release v1.0.0.
+*******************************************************************************/
+
 package FileOperate;
 
 import java.io.BufferedReader;
@@ -14,8 +28,12 @@ public class FileOperate {
     String filename = null;
     
     public FileOperate(String n) {
-		// TODO Auto-generated constructor stub
     	filename = n;
+	}
+
+	public boolean fileExist(){
+		file = new File(filename);
+		return file.exists();
 	}
     
 	public void fileWrite(String data){
@@ -49,16 +67,15 @@ public class FileOperate {
 	            //System.out.println("filetest="+b);
 				a += b;
 	        }  
-	        //b = br.readLine();
 		}catch(Exception e){
 			
-		}finally {  
-            try {  
-                br.close();  
-            } catch (IOException e) {  
-                e.printStackTrace();  
-            }  
-        } 
+		}/*finally {  
+	            	try {  
+	            	    br.close();  
+	            	} catch (IOException e) {  
+	            	    e.printStackTrace();  
+	            	}  
+        	} */
 		return a;
 	}
 }

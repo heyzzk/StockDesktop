@@ -1,3 +1,17 @@
+/******************************************************************************
+*
+* Authors            : JackZheng (heyzzk@126.com)
+*
+********************************************************************************
+* Copyright (c) 2016, JackZheng.
+* All rights reserved.
+*******************************************************************************
+* REVISON HISTORY
+*
+* VERSION | DATE          | DESCRIPTION
+* 1.0.0   | 2016/04/14    | First release v1.0.0. Finish basic functions.
+*******************************************************************************/
+
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
@@ -14,25 +28,27 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-
 import FileOperate.FileOperate;
+
+//example
+//s_sh000001
+//s_sz002230
 
 public class StockDesktop {
 	
     JFrame jf;  
     JPanel jp;  
-    static JTextField jtf[] = new JTextField[10];//支持10组数据
+    static JTextField jtf[] = new JTextField[10];//support 10 stocks
     static JButton jbt[] = new JButton[10];
     
     static ArrayList globallist;
 
 	static String filecode[] = new String[10];//code string read from file
-	static int codeactive[] = {0};
+	static int codeactive[] = {0,0,0,0,0,0,0,0,0,0};
 	static String urlfinal = "";
 
     public StockDesktop() {  
@@ -48,14 +64,14 @@ public class StockDesktop {
             jtf[i].setBounds(10,20+30*i,180,25);
             jtf[i].setText("null");
             
-            jbt[i] = new JButton();  
+            jbt[i] = new JButton("+");  
             jp.add(jbt[i]);
             contentPane.add(jbt[i]);
-            jbt[i].setBounds(200,20+30*i,25,25);
+            jbt[i].setBounds(200,20+30*i,45,25);
             jbt[i].addActionListener(new ButtonListen());
         }
 
-        //主窗口设置
+        //main window setup
         jf.pack();
         jf.setLocation(20, 860);  
         jf.setSize(260, 300);
@@ -71,57 +87,71 @@ public class StockDesktop {
 	    public void actionPerformed(ActionEvent e) {
 	    	String[] tmp = e.toString().split(",");
 	    	int btid=(Integer.parseInt(tmp[5])-20)/30;
-	    	//System.out.println("你单击了按钮:"+btid);
-	    	//jtf[btid].setText("null");
+
 	    	String getDate = jtf[btid].getText();
-			/*
-	    	if(!getDate.equals("null")){
-	    		System.out.println("ID="+btid+",delete stock");
-	    	}else{
-	    		System.out.println("ID="+btid+",add stock");
-	    	}
-	    	*/
 
 			if(codeactive[btid]==1){//active->null
 				filecode[btid] = "null";
 				codeactive[btid] = 0;
+				jtf[btid].setText("null");
+				jbt[btid].setText("+");
 				System.out.println("ID="+btid+",delete stock");
 			}else{//null->active
 				filecode[btid] = jtf[btid].getText();
 				codeactive[btid] = 1;
+				jbt[btid].setText("-");
 				System.out.println("ID="+btid+",add stock");
 			}
 			
 			//filecode write to file
-			final FileOperate fop = new FileOperate("file");
+			final FileOperate fop = new FileOperate("StockDesktop.db");
 			urlfinal = urlProcess(filecode);
 			StringBuilder sb = new StringBuilder();
+			System.out.println("btn:filecode.length="+filecode.length);
 			for(int i=0;i<filecode.length;i++)
 				sb.append(filecode[i]+";");
 			fop.fileWrite(sb.toString());
 	    }
     }
+
+	public static void fileProcess(){
+		String readfile=null;
+		final FileOperate fop = new FileOperate("StockDesktop.db");
+		boolean fileexist = fop.fileExist();
+		System.out.println("fileExit="+fileexist);
+		if(fileexist){
+			readfile = fop.fileRead();
+		}else{
+			fop.fileWrite("null;null;null;null;null;null;null;null;null;null;");
+			readfile = fop.fileRead();
+		}
+		
+		System.out.println("readfile="+readfile);
+		filecode = readfile.split(";");
+		System.out.println("filecode length="+filecode.length);
+		for(int i=0;i<filecode.length;i++) {
+			if(!filecode[i].equals("null")){
+				System.out.println("filecode["+i+"]="+filecode[i]);
+				codeactive[i] = 1;
+				jbt[i].setText("-");
+			}
+			System.out.print(codeactive[i]+",");
+		}
+		System.out.println("");
+
+		System.out.println("init end");
+
+	}
 	
 	public static void main(String[] args) {
 		
 		new StockDesktop();//for content view
-		
-		final FileOperate fop = new FileOperate("file");
-        
-		//final DecimalFormat df = new DecimalFormat("0.00");
-		
+
+		fileProcess();//read or init file
+				
         TimerTask task = new TimerTask() {
             public void run() {  
 				System.out.println("timer");
-        		String readfile = fop.fileRead();
-				filecode = readfile.split(";");
-				System.out.println("filecode length="+filecode.length);
-				for(int i=0;i<filecode.length;i++) {
-					if(!filecode[i].equals("null")){
-						System.out.println("filecode["+i+"]="+filecode[i]);
-						codeactive[i] = 1;
-					}
-				}
 
 				//combine the code to url
 				urlfinal = urlProcess(filecode);
@@ -184,38 +214,19 @@ public class StockDesktop {
 	}
 	
 	public static String urlProcess(String input[]) {
-	/*
-		DecimalFormat df = new DecimalFormat("000000");
-		StringBuilder sb = new StringBuilder();
 		String url="http://hq.sinajs.cn/list=";
-		String headsh=",s_sh";
-		String headsz=",s_sz";
-		
+		StringBuilder sb = new StringBuilder();
 		sb.append(url);
 
-        for (int i = start; i < start+length; i++) {
-        	if(shanghai)
-        		sb.append(headsh);
-        	else
-				sb.append(headsz);
-        	sb.append(String.valueOf(df.format(i)));
-        }
-        
-		return sb.toString();
-	*/
-
-	String url="http://hq.sinajs.cn/list=";
-	StringBuilder sb = new StringBuilder();
-	sb.append(url);
-
-	for(int i=0;i<input.length;i++){
-		if(input[i] == null){
-			sb.append("null,");
-		}else{
-			sb.append(input[i]+",");
+		for(int i=0;i<input.length;i++){
+			if(input[i] == null){
+				sb.append("null,");
+			}else{
+				sb.append(input[i]+",");
+			}
 		}
-	}
-	
-	return sb.toString();
+		
+		return sb.toString();
 	}
 }
+
