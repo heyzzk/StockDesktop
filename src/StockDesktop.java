@@ -10,9 +10,9 @@
 *
 * VERSION | DATE          | DESCRIPTION
 * 1.0.0   | 2016/04/14    | First release v1.0.0. Finish basic functions.
+* 1.1.0   | 2016/04/26    | Add author statement & hide code fuction
 *******************************************************************************/
 
-import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -24,13 +24,15 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import FileOperate.FileOperate;
 
@@ -44,6 +46,8 @@ public class StockDesktop {
     JPanel jp;  
     static JTextField jtf[] = new JTextField[10];//support 10 stocks
     static JButton jbt[] = new JButton[10];
+    static JCheckBox jcb = new JCheckBox("隐藏");
+	static JTextArea jtas = null;
     
     static ArrayList globallist;
 
@@ -70,6 +74,20 @@ public class StockDesktop {
             jbt[i].setBounds(200,20+30*i,45,25);
             jbt[i].addActionListener(new ButtonListen());
         }
+        
+        jcb.setBounds(10,20+30*10,52,25);
+        contentPane.add(jcb);
+
+		//statement
+		jtas = new JTextArea(); 
+		jtas.setBounds(10,20+30*11,220,125);
+		jtas.setText("深市:s_sz+代码  如 深指:s_sz399001"+"\n"
+					+"沪市:s_sh+代码  如 沪指:s_sh000001"+"\n"
+					+"作者:heyzzk@126.com"+"\n"
+					+"All Rights Reserved v1.1@20160426");
+		//jts.setBackground(Color.gray);
+		jtas.setEditable(false);
+		contentPane.add(jtas);
 
         //main window setup
         jf.pack();
@@ -165,8 +183,12 @@ public class StockDesktop {
         		for(int i=0;i<stocks.length;i++){
         			String[] tmp = stocks[i].split(",");
         			
-        			if(!tmp[0].equals("null"))
-        				jtf[i].setText(tmp[0]+"    "+tmp[1]+"    "+tmp[3]+" ");
+        			if(!tmp[0].equals("null")){
+        				if(jcb.isSelected())//hide code
+        					jtf[i].setText(""+"    "+tmp[1]+"    "+tmp[3]+" ");
+        				else
+        					jtf[i].setText(tmp[0]+"    "+tmp[1]+"    "+tmp[3]+" ");
+        			}
         		}
             }
         };
